@@ -255,63 +255,28 @@ server {
 
 ### 方式二：Docker 部署
 
-项目根目录下创建 `docker-compose.yml`：
+构建并启动：
 
-```yaml
-version: '3.8'
+```bash
+# 构建镜像
+bash scripts/build-docker.sh
 
-services:
-  chroma:
-    image: chromadb/chroma
-    container_name: chroma
-    ports:
-      - "8600:8000"
-    volumes:
-      - chroma_data:/chroma/chroma/.chroma_index
-    restart: unless-stopped
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: tlg-rag-bot-backend
-    ports:
-      - "4000:4000"
-    env_file:
-      - .env
-    depends_on:
-      - chroma
-    restart: unless-stopped
-
-  frontend:
-    image: nginx:alpine
-    container_name: tlg-rag-bot-frontend
-    ports:
-      - "80:80"
-    volumes:
-      - ./frontend/dist:/usr/share/nginx/html:ro
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - backend
-    restart: unless-stopped
-
-volumes:
-  chroma_data:
+# 启动所有服务
+docker-compose up -d
 ```
 
-后端 `backend/Dockerfile`：
+相关文件：
 
-```dockerfile
-FROM rust:1.75-slim as builder
+- `docker-compose.yml` — 一键启动后端 + 前端 + Chroma
+- `backend/Dockerfile` — 后端镜像构建
+- `Dockerfile.frontend` — 前端镜像构建
+- `nginx.conf` — 前端 nginx 配置
 
-WORKDIR /app
-COPY Cargo.toml Cargo.lock ./
-COPY src ./src
-RUN cargo build --release && \
-    cp target/release/tlg-rag-bot /app/
+停止服务：
 
-FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+```bash
+docker-compose down
+```
 COPY --from=builder /app/tlg-rag-bot /usr/local/bin/
 WORKDIR /app
 COPY .env.example .env
@@ -341,12 +306,14 @@ server {
 构建并启动：
 
 ```bash
-cd frontend
-npm install && npm run build
-cd ..
+# 一键打包（后端 + 前端）
+bash scripts/package.sh
 
-docker-compose up -d --build
+# systemd 部署（需 root 权限）
+sudo bash scripts/deploy.sh
 ```
+
+前端使用 nginx 部署静态文件：
 
 ## 切换 AI 模型
 
