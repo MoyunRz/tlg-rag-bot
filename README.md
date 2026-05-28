@@ -2,6 +2,24 @@
 
 Telegram 自动问答客服机器人。基于 RAG（检索增强生成）架构，支持知识库上传、Telegram 直接问答、前端可视化管理和在线调试。
 
+## 页面预览
+
+### 概览页面
+
+![概览页面](docs/imgs/img.png)
+
+### 知识库页面
+
+![知识库页面](docs/imgs/img_1.png)
+
+### 在线调试页面
+
+![在线调试页面](docs/imgs/img_2.png)
+
+### Telegram Bot 问答示例
+
+![Telegram Bot 问答示例](docs/imgs/img_3.png)
+
 ## 功能特性
 
 - **Telegram 问答** — Bot 接收消息，自动检索知识库并生成回答
