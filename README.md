@@ -145,7 +145,7 @@ docker run -d --name chroma \
 验证：
 
 ```bash
-curl http://127.0.0.1:8600/api/v1/heartbeat
+curl http://127.0.0.1:8600/api/v2/heartbeat
 ```
 
 ### 2. 配置环境变量

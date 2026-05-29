@@ -10,7 +10,7 @@ services:
       - chroma_data:/chroma/chroma/.chroma_index
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/heartbeat"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -24,6 +24,8 @@ services:
       - "4000:4000"
     env_file:
       - .env
+    environment:
+      CHROMA_URL: http://chroma:8000
     depends_on:
       chroma:
         condition: service_healthy
