@@ -15,7 +15,7 @@ fi
 
 # 检查 Chroma
 echo "检查 Chroma..."
-if curl -s http://127.0.0.1:8600/api/v1/heartbeat > /dev/null 2>&1; then
+if curl -s http://127.0.0.1:8600/api/v2/heartbeat > /dev/null 2>&1; then
     echo "✓ Chroma 已运行"
 else
     echo "✗ Chroma 未运行，请先启动: docker run -d --name chroma -p 8600:8000 chromadb/chroma"
