@@ -2,7 +2,7 @@ FROM rust:1.75-slim as builder
 
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
-COPY src ./src
+COPY src ./backend/src
 RUN apt-get update && apt-get install -y \
     libssl-dev pkg-config \
     && rm -rf /var/lib/apt/lists/*
