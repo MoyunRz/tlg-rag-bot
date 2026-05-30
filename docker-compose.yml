@@ -17,13 +17,13 @@ services:
 
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: tlg-backend
     ports:
       - "4000:4000"
     env_file:
-      - .env
+      - ../.env
     environment:
       CHROMA_URL: http://chroma:8000
     depends_on:
@@ -38,8 +38,8 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: Dockerfile.frontend
+      context: ./frontend
+      dockerfile: ../Dockerfile.frontend
     container_name: tlg-frontend
     ports:
       - "80:80"
