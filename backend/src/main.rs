@@ -5,6 +5,8 @@ mod routes;
 mod services;
 mod state;
 
+use std::path::{Path, PathBuf};
+
 use anyhow::Result;
 use tokio::net::TcpListener;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -13,7 +15,7 @@ use crate::{config::AppConfig, state::AppState};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenvy::dotenv().ok();
+    dotenvy::from_filename(Path::new("../.env")).ok();
 
     tracing_subscriber::registry()
         .with(
@@ -23,7 +25,12 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let config = AppConfig::from_env()?;
+    // 优先从环境变量 CONFIG_PATH 读取配置文件路径，默认使用 config.yaml
+    let config_path = std::env::var("CONFIG_PATH")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("config.yaml"));
+
+    let config = AppConfig::load(&config_path)?;
     let bind_addr = config.bind_addr();
     let state = AppState::new(config)?;
     let app = app::build_router(state.clone());

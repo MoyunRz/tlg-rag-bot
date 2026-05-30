@@ -3,16 +3,16 @@ use std::time::Duration;
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::config::{LlmConfig, LlmProvider};
+use crate::config::{LlmConfigInternal, LlmProvider};
 
 #[derive(Debug, Clone)]
 pub struct LlmService {
     client: reqwest::Client,
-    config: LlmConfig,
+    config: LlmConfigInternal,
 }
 
 impl LlmService {
-    pub fn new(client: reqwest::Client, config: LlmConfig) -> Self {
+    pub fn new(client: reqwest::Client, config: LlmConfigInternal) -> Self {
         Self { client, config }
     }
 

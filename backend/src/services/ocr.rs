@@ -4,7 +4,7 @@ use anyhow::{anyhow, bail, Context, Result};
 use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine};
 use serde::{Deserialize, Serialize};
 
-use crate::config::OcrConfig;
+use crate::config::OcrConfigInternal;
 
 const OCR_NO_TEXT_SENTINEL: &str = "[[NO_TEXT]]";
 const OCR_SYSTEM_PROMPT: &str = "You are an OCR engine. Extract only the readable text from the provided file. Preserve the original reading order. Do not summarize, answer questions, translate, or infer missing words. If there is no readable text, return exactly [[NO_TEXT]].";
@@ -14,11 +14,11 @@ const OCR_USER_PROMPT: &str =
 #[derive(Debug, Clone)]
 pub struct OcrService {
     client: reqwest::Client,
-    config: OcrConfig,
+    config: OcrConfigInternal,
 }
 
 impl OcrService {
-    pub fn new(client: reqwest::Client, config: OcrConfig) -> Self {
+    pub fn new(client: reqwest::Client, config: OcrConfigInternal) -> Self {
         Self { client, config }
     }
 

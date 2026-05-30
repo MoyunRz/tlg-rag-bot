@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 
 use crate::{
-    config::AppConfig,
+    config::AppConfigInternal,
     services::{
         chroma::ChromaService, embed::EmbeddingService, kb_ingest::KbIngestService,
         llm::LlmService, ocr::OcrService, rag::RagService,
@@ -12,14 +12,14 @@ use crate::{
 
 #[derive(Clone, Debug)]
 pub struct AppState {
-    pub config: AppConfig,
+    pub config: AppConfigInternal,
     pub chroma: Arc<ChromaService>,
     pub ingest: Arc<KbIngestService>,
     pub rag: Arc<RagService>,
 }
 
 impl AppState {
-    pub fn new(config: AppConfig) -> Result<Self> {
+    pub fn new(config: AppConfigInternal) -> Result<Self> {
         let http_client = reqwest::Client::new();
         let chroma_http_client = build_chroma_client(&config.chroma_url)?;
         let chroma = Arc::new(ChromaService::new(

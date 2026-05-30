@@ -7,7 +7,7 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
-    config::KbIngestionConfig,
+    config::KbIngestionConfigInternal,
     models::kb::{ChunkRecord, DocumentIngestSummary, UploadedDocument},
     services::{chroma::ChromaService, embed::EmbeddingService, ocr::OcrService},
 };
@@ -30,7 +30,7 @@ impl IngestError {
 
 #[derive(Debug, Clone)]
 pub struct KbIngestService {
-    settings: KbIngestionConfig,
+    settings: KbIngestionConfigInternal,
     chroma: Arc<ChromaService>,
     embedder: Arc<EmbeddingService>,
     ocr: Option<Arc<OcrService>>,
@@ -38,7 +38,7 @@ pub struct KbIngestService {
 
 impl KbIngestService {
     pub fn new(
-        settings: KbIngestionConfig,
+        settings: KbIngestionConfigInternal,
         chroma: Arc<ChromaService>,
         embedder: Arc<EmbeddingService>,
         ocr: Option<Arc<OcrService>>,
@@ -409,7 +409,7 @@ fn prepare_text_document(
     source_name: String,
     tags: Vec<String>,
     raw_text: String,
-    settings: KbIngestionConfig,
+    settings: KbIngestionConfigInternal,
 ) -> AnyResult<PreparedDocument> {
     let normalized_text = normalize_text(&raw_text);
     let text_chars = normalized_text.chars().count();

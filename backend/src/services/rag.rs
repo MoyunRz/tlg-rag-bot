@@ -3,19 +3,18 @@ use std::{sync::Arc, time::Instant};
 use anyhow::{ensure, Result};
 
 use crate::{
-    config::RagConfig,
+    config::RagConfigInternal,
     models::kb::{RagAnswer, RagCitation, RagTimings, RetrievedChunk},
     services::{chroma::ChromaService, embed::EmbeddingService, llm::LlmService},
 };
 
 const ANSWER_FORMAT_MARKDOWN: &str = "markdown";
-const SYSTEM_PROMPT: &str = "你是一个中文客服知识库助手。你只能根据提供的知识库片段回答用户问题。如果知识库里没有足够信息，请明确说明当前知识库不足以判断，并建议用户联系人工客服。不要编造政策、时效、价格或承诺。输出要求：使用简洁、稳定、Telegram 可渲染的 Markdown；优先使用短段落、列表、`**加粗**`、`` `行内代码` `` 和 fenced code block；关键结论尽量用 [1]、[2] 这类编号引用对应知识库片段；禁止在答案中提及\"来源\"、\"来源信息\"、\"出自\"、\"根据哪篇\"等文字，也不要暴露片段来源名称；保证普通纯文本阅读也自然，不要过度排版。";
 const LOW_CONTEXT_FALLBACK: &str =
     "当前知识库里没有足够相关的信息，暂时无法给出确定答复。\n\n建议联系人工客服进一步确认。";
 
 #[derive(Debug, Clone)]
 pub struct RagService {
-    config: RagConfig,
+    config: RagConfigInternal,
     chroma: Arc<ChromaService>,
     embedder: Arc<EmbeddingService>,
     llm: Arc<LlmService>,
@@ -23,7 +22,7 @@ pub struct RagService {
 
 impl RagService {
     pub fn new(
-        config: RagConfig,
+        config: RagConfigInternal,
         chroma: Arc<ChromaService>,
         embedder: Arc<EmbeddingService>,
         llm: Arc<LlmService>,
@@ -75,7 +74,7 @@ impl RagService {
         let generate_started = Instant::now();
         let final_answer = self
             .llm
-            .chat(SYSTEM_PROMPT, &build_user_prompt(question, &context))
+            .chat(&self.config.bot_prompt.system, &self.build_user_prompt(question, &context))
             .await?;
         let generate_ms = elapsed_ms(generate_started);
         let total_ms = elapsed_ms(total_started);
@@ -178,10 +177,12 @@ fn build_context(chunks: &[RetrievedChunk], max_context_chars: usize) -> String 
     context.trim().to_string()
 }
 
-fn build_user_prompt(question: &str, context: &str) -> String {
-    format!(
-        "用户问题：\n{question}\n\n知识库片段：\n{context}\n\n请严格遵守以下要求：\n1. 只根据以上知识库片段回答，不要补充片段之外的事实。\n2. 用简洁、Telegram 可直接渲染的 Markdown 作答，优先使用短段落、列表、`**加粗**`、`` `行内代码` `` 和 fenced code block。\n3. 关键结论尽量在句末标注对应片段编号，例如 [1]、[2]。\n4. 禁止在答案中提及\"来源\"、\"来源信息\"、\"出自\"、\"根据哪篇\"、\"来自\"、\"在知识库中\"等字样，不要暴露任何片段的来源名称。\n5. 避免表格、复杂嵌套和不稳定 Markdown 语法；不要过度排版。\n6. 如果片段不足，请直接说明知识库不足，不要编造。"
-    )
+impl RagService {
+    fn build_user_prompt(&self, question: &str, context: &str) -> String {
+        self.config.bot_prompt.user_template
+            .replace("{question}", question)
+            .replace("{context}", context)
+    }
 }
 
 fn build_citations(chunks: &[RetrievedChunk]) -> Vec<RagCitation> {
@@ -215,7 +216,7 @@ fn preview(text: &str, max_chars: usize) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{build_citations, build_context, build_user_prompt};
+    use super::{build_citations, build_context};
     use crate::models::kb::RetrievedChunk;
 
     fn sample_chunk(index: usize, text: &str) -> RetrievedChunk {
@@ -239,15 +240,6 @@ mod tests {
 
         assert!(context.contains("[1] 来源: source-0.md"));
         assert!(context.contains("[2] 来源: source-1.md"));
-    }
-
-    #[test]
-    fn build_user_prompt_requests_markdown_and_citations() {
-        let prompt = build_user_prompt("退款多久到账？", "[1] 来源: faq.md\n内容: T+1");
-
-        assert!(prompt.contains("Markdown"));
-        assert!(prompt.contains("[1]、[2]"));
-        assert!(prompt.contains("只根据以上知识库片段回答"));
     }
 
     #[test]
