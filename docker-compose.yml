@@ -23,8 +23,7 @@ services:
     ports:
       - "4000:4000"
     env_file:
-      - path: ../.env
-        required: false
+      - ../.env
     environment:
       CHROMA_URL: http://chroma:8000
     depends_on:

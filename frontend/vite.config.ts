@@ -6,11 +6,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:4000',
+        target: 'http://149.104.28.237:4000',
         changeOrigin: true,
       },
       '/telegram': {
-        target: 'http://127.0.0.1:4000',
+        target: 'http://149.104.28.237:4000',
         changeOrigin: true,
       },
     },
