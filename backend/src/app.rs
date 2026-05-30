@@ -17,7 +17,9 @@ pub fn build_router(state: AppState) -> Router {
                 .route("/kb/chunks", get(routes::kb::list_chunks))
                 .route("/kb/chunks", delete(routes::kb::delete_chunks))
                 .route("/kb/sources", get(routes::kb::list_sources))
-                .route("/debug/query", post(routes::debug::run_debug_query)),
+                .route("/debug/query", post(routes::debug::run_debug_query))
+                .route("/telegram/webhook", post(routes::telegram_webhook::telegram_webhook))
+                .route("/telegram/webhook/health", get(routes::telegram_webhook::webhook_health)),
         )
         .with_state(state)
         .layer(CorsLayer::permissive())

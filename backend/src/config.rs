@@ -25,6 +25,8 @@ pub struct TelegramConfig {
     #[serde(default = "default_telegram_enabled")]
     pub enabled: bool,
     pub bot_token: Option<String>,
+    #[serde(default)]
+    pub mode: Option<String>,  // "long_poll" or "webhook"
 }
 
 fn default_telegram_enabled() -> bool {
@@ -88,6 +90,7 @@ impl Default for TelegramConfig {
         Self {
             enabled: true,
             bot_token: None,
+            mode: None,
         }
     }
 }
@@ -167,12 +170,28 @@ pub struct AppConfigInternal {
     pub port: u16,
     pub telegram_enabled: bool,
     pub telegram_bot_token: String,
+    pub telegram_mode: TelegramMode,
     pub chroma_url: String,
     pub chroma_collection: String,
     pub kb_ingestion: KbIngestionConfigInternal,
     pub ocr: OcrConfigInternal,
     pub llm: LlmConfigInternal,
     pub rag: RagConfigInternal,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum TelegramMode {
+    LongPoll,
+    Webhook,
+}
+
+impl TelegramMode {
+    pub fn from_str(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "webhook" => TelegramMode::Webhook,
+            _ => TelegramMode::LongPoll,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -291,6 +310,10 @@ impl AppConfig {
         let telegram_bot_token = env::var("TELEGRAM_BOT_TOKEN")
             .unwrap_or_else(|_| self.telegram.bot_token.clone().unwrap_or_default());
 
+        let telegram_mode_str = env::var("TELEGRAM_MODE")
+            .unwrap_or_else(|_| self.telegram.mode.clone().unwrap_or_else(|| "long_poll".to_string()));
+        let telegram_mode = TelegramMode::from_str(&telegram_mode_str);
+
         let chroma_collection = env::var("CHROMA_COLLECTION")
             .unwrap_or_else(|_| self.chroma.collection.clone().unwrap_or_default());
 
@@ -375,6 +398,7 @@ impl AppConfig {
                 .unwrap_or(self.port.unwrap_or(4000)),
             telegram_enabled,
             telegram_bot_token,
+            telegram_mode,
             chroma_url: env::var("CHROMA_URL")
                 .unwrap_or_else(|_| self.chroma.url.unwrap_or_else(|| "http://127.0.0.1:8600".to_string())),
             chroma_collection,

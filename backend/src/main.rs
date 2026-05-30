@@ -11,7 +11,7 @@ use anyhow::Result;
 use tokio::net::TcpListener;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::{config::AppConfig, state::AppState};
+use crate::{config::{AppConfig, TelegramMode}, state::AppState};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -25,7 +25,6 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    // 优先从环境变量 CONFIG_PATH 读取配置文件路径，默认使用 config.yaml
     let config_path = std::env::var("CONFIG_PATH")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("config.yaml"));
@@ -40,18 +39,33 @@ async fn main() -> Result<()> {
     tracing::info!(
         address = %bind_addr,
         telegram_enabled = state.config.telegram_enabled,
+        telegram_mode = ?state.config.telegram_mode,
         "backend listening"
     );
 
     if state.config.telegram_enabled {
-        let telegram = tokio::spawn(routes::telegram::run_long_polling(state));
+        match state.config.telegram_mode {
+            TelegramMode::Webhook => {
+                tracing::info!("using telegram webhook mode");
+                tokio::select! {
+                    result = server => result?,
+                    _ = tokio::signal::ctrl_c() => {
+                        tracing::info!("shutdown signal received");
+                    },
+                }
+            }
+            TelegramMode::LongPoll => {
+                tracing::info!("using telegram long polling mode");
+                let telegram = tokio::spawn(routes::telegram::run_long_polling(state));
 
-        tokio::select! {
-            result = server => result?,
-            result = telegram => result??,
+                tokio::select! {
+                    result = server => result?,
+                    result = telegram => result??,
+                }
+            }
         }
     } else {
-        tracing::info!("telegram long polling disabled");
+        tracing::info!("telegram disabled");
         server.await?;
     }
 

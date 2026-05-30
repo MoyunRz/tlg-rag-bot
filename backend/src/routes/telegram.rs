@@ -85,7 +85,7 @@ enum InlineToken {
     Link { label: String, url: String },
 }
 
-fn strip_citation_markers(text: &str) -> String {
+pub fn strip_citation_markers(text: &str) -> String {
     let mut result = String::with_capacity(text.len());
     let mut chars = text.chars().peekable();
 
@@ -137,7 +137,7 @@ fn strip_citation_markers(text: &str) -> String {
     collapsed.trim().to_string()
 }
 
-fn build_telegram_reply_messages(text: &str) -> Vec<String> {
+pub fn build_telegram_reply_messages(text: &str) -> Vec<String> {
     let blocks = parse_reply_blocks(text);
     let mut messages = Vec::new();
     let mut current = String::new();
